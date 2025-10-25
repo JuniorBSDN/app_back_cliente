@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>conect Back | Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .modal-content {
+            transition: all 0.3s ease-in-out;
+        }
+        .chart-container {
+            position: relative;
+            height: 35vh;
+            min-height: 250px;
+        }
+        /* Efeito de clique no card */
+        .summary-card {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            transform: scale(1);
+        }
+        .summary-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <serviceflow-navbar></serviceflow-navbar>
+<br>
+    <h3 class="text-3xl font-bold text-gray-800">Resumo de chamado</h3>
+    <!--RESUMO DE ATENDIMENTOS-->
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 flex items-center summary-card" onclick="openStatusModal('ongoing')">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                    <i data-feather="clock" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">Em Andamento</p>
+                    <h3 class="text-2xl font-bold" id="ongoing-count">12</h3>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 flex items-center summary-card" onclick="openStatusModal('completed')">
+                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                    <i data-feather="check-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">Concluídos</p>
+                    <h3 class="text-2xl font-bold" id="completed-count">42</h3>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 flex items-center summary-card" onclick="openStatusModal('pending')">
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                    <i data-feather="alert-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">Pendentes</p>
+                    <h3 class="text-2xl font-bold" id="pending-count">5</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Últimos Atendimentos</h3>
+                <button onclick="window.location.href='newTicket.html'" class="w-1/2 md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition duration-150">
+                    <i data-feather="plus" class="w-5 h-5 mr-2"></i> Novo Chamado
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipamento</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="tickets-table">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="action-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md modal-content transform scale-95">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold" id="action-modal-title">Ações</h3>
+                <button onclick="closeActionModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="status-list-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content transform scale-95">
+
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800" id="status-modal-title">Chamados por Status</h3>
+                <button onclick="closeStatusModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+    <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipamento</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="status-modal-list">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <a href="tickets.html" class="text-sm text-blue-600 hover:text-blue-800 font-semibold transition duration-150">Ver todos os chamados ></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Atendimentos por Status</h3>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Atendimentos Mensais</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    <serviceflow-footer></serviceflow-footer>
+
+    <script>
+        // ===================================================
+        // 0. VERIFICAÇÃO DE AUTENTICAÇÃO (Padronizado)
+        // ===================================================
+        (function checkAuth() {
+            // Verifica se existe uma sessão ativa (seja sessionStorage ou localStorage)
+            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user');
+
+            // Se o usuário não estiver autenticado, redireciona para a página de login (index.html)
+            if (!user) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            // Em uma aplicação real, você validaria o token do usuário ou o status dele aqui.
+            console.log(`Usuário autenticado: ${user}. Carregando página.`);
+        })();
+
+        // ===================================================
+        // 1. FUNÇÃO LOGOUT (Padronizado)
+        // ===================================================
+        function logout() {
+            // Remove a sessão de ambas as áreas de armazenamento
+            sessionStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('serviceflow_user');
+            // Redireciona para a página de login
+            window.location.replace('index.html');
+        }
+
+        // ===================================================
+        // 2. WEB COMPONENT: ServiceflowNavbar (Padronizado)
+        // ===================================================
+        class ServiceflowNavbar extends HTMLElement {
+            connectedCallback() {
+                const currentPath = window.location.pathname.split('/').pop();
+
+                const links = [
+                    { href: "dash.html", text: "Dashboard" },
+                    { href: "tickets.html", text: "Chamados" },
+                    { href: "reports.html", text: "Relatórios" },
+                ];
+
+                const navLinksHtml = links.map(link => {
+                    const isActive = currentPath === link.href || (currentPath === '' && link.href === 'dash.html');
+                    const activeClasses = "font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
+                    const inactiveClasses = "hover:text-blue-600 transition duration-150";
+                    const classes = isActive ? activeClasses : inactiveClasses;
+                    return `<li><a href="${link.href}" class="${classes}">${link.text}</a></li>`;
+                }).join('');
+
+                this.innerHTML = `
+                    <header class="bg-white shadow-md">
+                        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                            <div class="text-2xl font-bold text-blue-600">Back Informatica - Soluções técnologicas</div>
+                            <nav class="hidden md:block">
+                                <ul class="flex space-x-6 text-gray-600">
+                                    ${navLinksHtml}
+                                </ul>
+                            </nav>
+                            <div class="flex items-center space-x-4">
+                                <button class="p-2 rounded-full hover:bg-gray-100 text-gray-500" onclick="alert('Notificações (Simulado)')">
+                                    <i data-feather="bell" class="w-5 h-5"></i>
+                                </button>
+                                <img src="https://ui-avatars.com/api/?name=User&background=3B82F6&color=fff&bold=true" alt="User Avatar" class="w-9 h-9 rounded-full border-2 border-blue-400" onclick="alert('Perfil (Simulado)')">
+                                <button class="p-2 rounded-lg bg-gray-100 hover:bg-red-100 text-red-600" onclick="logout()">
+                                    <i data-feather="log-out" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                `;
+                feather.replace();
+            }
+        }
+        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+
+        class ServiceflowFooter extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+                    <footer class="bg-white border-t border-gray-200 mt-auto">
+                        <div class="container mx-auto px-4 py-4 text-center text-sm text-gray-500">
+                            &copy; ${new Date().getFullYear()} ServiceFlow. Todos os direitos reservados.
+                        </div>
+                    </footer>
+                `;
+                feather.replace();
+            }
+        }
+        customElements.define('serviceflow-footer', ServiceflowFooter);
+
+
+        // ===================================================
+        // 2. LÓGICA GERAL E DADOS
+        // ===================================================
+
+        // Dados de exemplo para a lista de status
+        const allTicketsData = [
+            { id: 'TKT-001', requester: 'João Silva', equipment: 'Dell XPS 15', status: 'Em Andamento', date: '15/06/2023' },
+            { id: 'TKT-002', requester: 'Maria Oliveira', equipment: 'HP ProBook 450', status: 'Concluído', date: '14/06/2023' },
+            { id: 'TKT-003', requester: 'Carlos Souza', equipment: 'Lenovo ThinkPad', status: 'Pendente', date: '13/06/2023' },
+            { id: 'TKT-004', requester: 'Ana Costa', equipment: 'MacBook Pro', status: 'Concluído', date: '12/06/2023' },
+            { id: 'TKT-005', requester: 'Pedro Santos', equipment: 'Dell OptiPlex', status: 'Em Andamento', date: '11/06/2023' },
+            { id: 'TKT-006', requester: 'Paula Rego', equipment: 'Impressora HP', status: 'Concluído', date: '10/06/2023' },
+            { id: 'TKT-007', requester: 'Felipe Melo', equipment: 'Monitor LG', status: 'Em Andamento', date: '09/06/2023' },
+            { id: 'TKT-008', requester: 'Laura Gomes', equipment: 'Servidor Dell', status: 'Pendente', date: '08/06/2023' },
+            { id: 'TKT-009', requester: 'Marcos Viana', equipment: 'Mouse Logitech', status: 'Em Andamento', date: '07/06/2023' },
+            { id: 'TKT-010', requester: 'Sofia Neves', equipment: 'Teclado Mecânico', status: 'Concluído', date: '06/06/2023' },
+            { id: 'TKT-011', requester: 'Gabriel Dias', equipment: 'Roteador Cisco', status: 'Em Andamento', date: '05/06/2023' },
+            { id: 'TKT-012', requester: 'Helena Lima', equipment: 'Notebook Acer', status: 'Concluído', date: '04/06/2023' },
+        ];
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Feather replace é chamado na função checkAuth também para garantir que os ícones do navbar apareçam após a checagem.
+            feather.replace();
+            initCharts();
+            loadTickets(); // Carrega os 5 últimos chamados na tabela principal
+
+            document.getElementById('ticket-form').addEventListener('submit', handleTicketFormSubmit);
+            document.getElementById('ticket-photos').addEventListener('change', handlePhotoUploadPreview);
+        });
+
+        // NOVO: Função de Logout (Adicionada)
+        function logout() {
+            sessionStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('serviceflow_user');
+            alert('Sessão encerrada.');
+            window.location.replace('index.html'); // Redireciona para o novo index.html (Login)
+        }
+
+        // Função para pré-visualização das fotos (Mantida)
+        function handlePhotoUploadPreview(event) {
+            const previewContainer = document.getElementById('photos-preview');
+            previewContainer.innerHTML = '';
+            const files = event.target.files;
+
+            if (files.length === 0) {
+                 previewContainer.innerHTML = '<span class="text-sm text-gray-500 italic">Pré-visualização das imagens anexadas.</span>';
+                 return;
+            }
+
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'w-20 h-20 object-cover rounded-lg shadow-sm border border-gray-200';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Função principal para inicializar os gráficos (Mantida)
+        function initCharts() {
+            // Status Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Em Andamento', 'Concluídos', 'Pendentes'],
+                    datasets: [{
+                        data: [12, 42, 5],
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Monthly Chart
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(monthlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Atendimentos',
+                        data: [15, 19, 22, 18, 25, 30, 28, 32, 27, 24, 20, 17],
+                        backgroundColor: '#3B82F6',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Carrega dados de exemplo na tabela (Mantida)
+        function loadTickets() {
+            // Pega apenas os 5 primeiros tickets (últimos atendimentos)
+            const recentTickets = allTicketsData.slice(0, 5);
+
+            const tableBody = document.getElementById('tickets-table');
+            tableBody.innerHTML = '';
+
+            recentTickets.forEach(ticket => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ticket.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.requester}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.equipment}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full font-semibold ${getStatusClass(ticket.status)}">${ticket.status}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <button onclick="showTicketActions('${ticket.id}')" class="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-gray-100 transition duration-150">
+                            <i data-feather="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            feather.replace();
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Em Andamento': return 'bg-blue-100 text-blue-800';
+                case 'Concluído': return 'bg-green-100 text-green-800';
+                case 'Pendente': return 'bg-yellow-100 text-yellow-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // ===================================================
+        // 3. FUNÇÕES DE CONTROLE DE MODAL (Melhoradas)
+        // ===================================================
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            const content = modal.querySelector('.modal-content');
+
+            if (show) {
+                modal.classList.remove('hidden');
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+                feather.replace();
+            } else {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                modal.classList.add('opacity-0');
+
+                if (modalId === 'new-ticket-modal') {
+                    document.getElementById('ticket-photos').value = '';
+                    document.getElementById('photos-preview').innerHTML = '';
+                }
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function openNewTicketModal() {
+            toggleModal('new-ticket-modal', true);
+        }
+
+        function closeNewTicketModal() {
+            toggleModal('new-ticket-modal', false);
+        }
+
+        function closeActionModal() {
+            toggleModal('action-modal', false);
+        }
+
+        // NOVO: Funções para o Modal de Lista de Status
+
+        const statusMap = {
+            ongoing: { title: 'Chamados Em Andamento', status: 'Em Andamento', color: 'blue' },
+            completed: { title: 'Chamados Concluídos', status: 'Concluído', color: 'green' },
+            pending: { title: 'Chamados Pendentes', status: 'Pendente', color: 'yellow' },
+        };
+
+        function openStatusModal(statusKey) {
+            const statusInfo = statusMap[statusKey];
+            if (!statusInfo) return;
+
+            document.getElementById('status-modal-title').textContent = statusInfo.title;
+
+            const filteredTickets = allTicketsData.filter(t => t.status === statusInfo.status);
+            const listBody = document.getElementById('status-modal-list');
+            listBody.innerHTML = '';
+
+            if (filteredTickets.length === 0) {
+                listBody.innerHTML = `<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500 italic">Nenhum chamado encontrado com o status: ${statusInfo.status}.</td></tr>`;
+            } else {
+                filteredTickets.forEach(ticket => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${ticket.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.requester}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.equipment}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.date}</td>
+                    `;
+                    listBody.appendChild(row);
+                });
+            }
+
+            toggleModal('status-list-modal', true);
+        }
+
+        function closeStatusModal() {
+            toggleModal('status-list-modal', false);
+        }
+
+        // --- Funções Auxiliares (Mantidas) ---
+
+        function showTicketActions(ticketId) {
+            document.getElementById('action-modal-title').textContent = `Ações para ${ticketId}`;
+            document.getElementById('action-modal-content').innerHTML = `
+                <div class="space-y-4">
+                    <button onclick="viewTicketDetails('${ticketId}')" class="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-150">
+                        <span>Ver Detalhes</span>
+                        <i data-feather="eye" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="editTicket('${ticketId}')" class="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-150">
+                        <span>Editar</span>
+                        <i data-feather="edit" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="printTicket('${ticketId}')" class="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-150">
+                        <span>Imprimir Relatório</span>
+                        <i data-feather="printer" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            `;
+            feather.replace(); // Adicionado para garantir que os ícones do modal funcionem
+            toggleModal('action-modal', true);
+        }
+
+        function printTicket(ticketId) {
+            alert(`Gerando relatório para ${ticketId}`);
+            closeActionModal();
+        }
+
+        function viewTicketDetails(ticketId) {
+            alert(`Visualizando detalhes de ${ticketId}`);
+            closeActionModal();
+        }
+
+        function editTicket(ticketId) {
+            alert(`Editando ${ticketId}`);
+            closeActionModal();
+        }
+
+        function handleTicketFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            console.log('Novo Chamado Submetido:', Object.fromEntries(formData.entries()));
+            alert('Chamado criado com sucesso! (Simulado)');
+            closeNewTicketModal();
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>

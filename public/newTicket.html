@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServiceFlow | Novo Chamado</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <serviceflow-navbar></serviceflow-navbar>
+
+    <main class="container mx-auto px-4 py-6 flex-grow">
+
+        <div class="mb-6 flex items-center space-x-3">
+            <a href="tickets.html" class="text-gray-500 hover:text-blue-600 transition duration-150 p-2 rounded-full hover:bg-gray-200">
+                <i data-feather="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <a href="tickets.html" class="text-3xl font-bold text-gray-800 hover:text-blue-600 transition duration-150">Voltar</a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 max-w-5xl mx-auto">
+            <form class="space-y-6" id="new-ticket-form">
+
+                <div class="border-b-2 border-blue-600 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Preencha os dados abaixo</h2>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center border-b border-gray-300 pb-2">
+                        <i data-feather="user" class="w-5 h-5 mr-2 text-blue-600"></i> Dados do Solicitante
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1">
+                            <label for="requester-name-new" class="block text-sm font-medium text-gray-700 mb-1">Nome do Solicitante <span class="text-red-500">*</span></label>
+                            <input type="text" id="requester-name-new" name="requester-name-new" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="requester-phone-new" class="block text-sm font-medium text-gray-700 mb-1">Telefone <span class="text-red-500">*</span></label>
+                            <input type="tel" id="requester-phone-new" name="requester-phone-new" required placeholder="(XX) XXXXX-XXXX" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-1 relative">
+                            <label for="requester-secretary" class="block text-sm font-medium text-gray-700 mb-1">Secretaria <span class="text-red-500">*</span></label>
+                            <select id="requester-secretary" name="requester-secretary" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 appearance-none bg-white pr-8">
+                                <option value="">Selecione a Secretaria</option>
+                                <option value="semed">Secretaria de Educação</option>
+                                <option value="saude">Secretaria de Saúde</option>
+                                <option value="fazenda">Secretaria da Fazenda</option>
+                                <option value="adm">Secretaria de Administração</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 bottom-0">
+                                <i data-feather="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-span-1">
+                            <label for="requester-sector" class="block text-sm font-medium text-gray-700 mb-1">Setor <span class="text-red-500">*</span></label>
+                            <input type="text" id="requester-sector" name="requester-sector" required placeholder="Ex: Protocolo, 5º Andar" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-full">
+                            <label for="requester-address" class="block text-sm font-medium text-gray-700 mb-1">Endereço (Localização do Equipamento) <span class="text-red-500">*</span></label>
+                            <input type="text" id="requester-address" name="requester-address" required placeholder="Ex: Rua A, 123 - Sala 101" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center border-b border-gray-300 pb-2">
+                        <i data-feather="monitor" class="w-5 h-5 mr-2 text-blue-600"></i> Dados do Equipamento
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1 relative">
+                            <label for="equipment-type-new" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Equipamento <span class="text-red-500">*</span></label>
+                            <select id="equipment-type-new" name="equipment-type-new" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 appearance-none bg-white pr-8">
+                                <option value="">Selecione o Tipo</option>
+                                <option value="computador">Computador / Desktop</option>
+                                <option value="notebook">Notebook / Laptop</option>
+                                <option value="impressora">Impressora</option>
+                                <option value="monitor">Monitor / Tela</option>
+                                <option value="rede">Equipamento de Rede (Switch, Roteador)</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 bottom-0">
+                                <i data-feather="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <div class="col-span-1">
+                            <label for="equipment-patrimonio" class="block text-sm font-medium text-gray-700 mb-1">Nº de Patrimônio</label>
+                            <input type="text" id="equipment-patrimonio" name="equipment-patrimonio" placeholder="PAT-XXXXXX (Opcional)" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="equipment-serial" class="block text-sm font-medium text-gray-700 mb-1">Nº de Série</label>
+                            <input type="text" id="equipment-serial" name="equipment-serial" required placeholder="Ex: S/N ABC12345 (Obrigatório)" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="equipment-brand" class="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                            <input type="text" id="equipment-brand" name="equipment-brand" placeholder="Ex: Dell, HP, Epson" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="equipment-model-new" class="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                            <input type="text" id="equipment-model-new" name="equipment-model-new" placeholder="Ex: XPS 15, ProBook 450" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center border-b border-gray-300 pb-2">
+                        <i data-feather="alert-triangle" class="w-5 h-5 mr-2 text-blue-600"></i> Motivo do Chamado
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center pt-2">
+                            <input type="checkbox" id="priority-checkbox" name="is_urgente" class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                            <label for="priority-checkbox" class="ml-2 block text-sm font-medium text-red-600">
+                                O problema é **URGENTE** e impede o trabalho?
+                            </label>
+                        </div>
+                        <div>
+                            <label for="ticket-problem-new" class="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada do Problema <span class="text-red-500">*</span></label>
+                            <textarea id="ticket-problem-new" name="ticket-problem-new" rows="4" required placeholder="Ex: O monitor não liga, a impressora puxa o papel amassado, a internet parou de funcionar na sala." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="equipment-photos" class="block text-sm font-medium text-gray-700 mb-1">Anexar Fotos do Equipamento / Problema (Opcional)</label>
+                            <input type="file" id="equipment-photos" name="equipment-photos" accept="image/*" multiple class="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100 transition duration-150
+                                cursor-pointer
+                            ">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="window.history.back();" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 flex items-center transition duration-150">
+                        <i data-feather="x" class="w-5 h-5 mr-2"></i> Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center transition duration-150 shadow-md hover:shadow-lg">
+                        <i data-feather="save" class="w-5 h-5 mr-2"></i> Salvar Chamado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <serviceflow-footer></serviceflow-footer>
+
+    <script>
+        // ===================================================
+        // 1. WEB COMPONENTS (Navbar e Footer) - Definição
+        // ===================================================
+
+        class ServiceflowNavbar extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+                    <header class="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-10">
+                        <h1 class="text-xl font-bold">ServiceFlow | Novo Chamado</h1>
+                        <a href="tickets.html" class="p-1 rounded-full hover:bg-blue-700 transition" title="Voltar para Chamados">
+                            <i data-feather="list" class="w-6 h-6"></i>
+                        </a>
+                    </header>
+                `;
+            }
+        }
+        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+
+        class ServiceflowFooter extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+                    <footer class="bg-white border-t border-gray-200 mt-auto">
+                        <div class="container mx-auto px-4 py-4 text-center text-sm text-gray-500">
+                            &copy; ${new Date().getFullYear()} ServiceFlow. Todos os direitos reservados.
+                        </div>
+                    </footer>
+                `;
+            }
+        }
+        customElements.define('serviceflow-footer', ServiceflowFooter);
+
+
+        // ===================================================
+        // 2. LÓGICA DO FORMULÁRIO (Simulando o "Endpoint")
+        // ===================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+
+            document.getElementById('new-ticket-form').addEventListener('submit', function(event) {
+                event.preventDefault(); // Impede o envio padrão do formulário
+
+                // Simulação de coleta de todos os dados, incluindo os separados (Secretaria e Setor)
+                const solicitante = document.getElementById('requester-name-new').value;
+                const telefone = document.getElementById('requester-phone-new').value;
+                const secretaria = document.getElementById('requester-secretary').value; // Valor da Secretaria (ex: semed)
+                const setor = document.getElementById('requester-sector').value; // Valor do Setor (ex: Protocolo)
+                const endereco = document.getElementById('requester-address').value;
+                const problema = document.getElementById('ticket-problem-new').value;
+                const urgente = document.getElementById('priority-checkbox').checked;
+
+                // Aqui você enviaria os dados formatados para o seu servidor
+                const newTicketData = {
+                    id: 'T' + Math.floor(Math.random() * 900 + 100), // ID simulado
+                    status: 'Novo - Para Aceite',
+                    requester: solicitante,
+                    phone: telefone,
+                    secretary: secretaria,
+                    sector: setor, // Campo Setor capturado e separado
+                    address: endereco,
+                    problem: problema,
+                    urgency: urgente ? 'Alta' : 'Média'
+                };
+
+                console.log('--- Novo Chamado Enviado ---');
+                console.log('Secretaria e Setor Separados:', newTicketData.secretary, newTicketData.sector);
+                console.log(newTicketData);
+
+                alert(`Sucesso! Chamado ${newTicketData.id} para a ${newTicketData.secretary} (${newTicketData.sector}) foi registrado. Redirecionando...`);
+
+
+                // Redireciona para a lista de chamados após o "salvamento"
+                setTimeout(() => {
+                    window.location.href = 'tickets.html';
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html>

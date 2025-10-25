@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackInformatica - Central de Atendimento | Relatórios</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.20/dist/jspdf.plugin.autotable.js"></script>
+
+    <style>
+        /* Contêiner de gráfico para garantir responsividade e altura */
+        .chart-container {
+            position: relative;
+            height: 350px; /* Altura controlada para evitar esticar */
+            min-height: 250px;
+        }
+        .modal-content {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Estilo para garantir que o QR Code seja nítido */
+        #pix-banner-qrcode {
+            background-color: white;
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <script>
+        // ===================================================
+        // 0. VERIFICAÇÃO DE AUTENTICAÇÃO (Padronizado)
+        // ===================================================
+        (function checkAuth() {
+            // Adicionado suporte para diferentes chaves de login para compatibilidade
+            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user') || localStorage.getItem('isLoggedIn');
+
+            if (!user) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            console.log(`Usuário autenticado. Carregando página.`);
+        })();
+
+        // ===================================================
+        // 1. FUNÇÃO LOGOUT (Padronizado)
+        // ===================================================
+        function logout() {
+            // Remove as sessões de login de todas as áreas de armazenamento
+            sessionStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            // Redireciona para a página de login
+            window.location.replace('index.html');
+        }
+
+        // ===================================================
+        // 2. WEB COMPONENT: ServiceflowNavbar (Padronizado)
+        // Implementação sem Shadow DOM (Igual ao dash.html)
+        // ===================================================
+        class ServiceflowNavbar extends HTMLElement {
+            connectedCallback() {
+                // Obtém o nome do arquivo da URL atual (Ex: reports.html)
+                const currentPath = window.location.pathname.split('/').pop();
+
+                const links = [
+                    { href: "dash.html", text: "Dashboard" },
+                    { href: "tickets.html", text: "Chamados" },
+                    { href: "reports.html", text: "Relatórios" },
+                ];
+
+                const navLinksHtml = links.map(link => {
+                    // Verifica se o link atual corresponde à página
+                    const isActive = currentPath === link.href;
+                    // Classes de destaque do dash.html
+                    const activeClasses = "font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
+                    const inactiveClasses = "hover:text-blue-600 transition duration-150";
+                    const classes = isActive ? activeClasses : inactiveClasses;
+                    return `<li><a href="${link.href}" class="${classes}">${link.text}</a></li>`;
+                }).join('');
+
+                this.innerHTML = `
+                    <header class="bg-white shadow-md">
+                        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                            <div class="text-2xl font-bold text-blue-600">Back Informática - Soluções técnologicas</div>
+                            <nav class="hidden md:block">
+                                <ul class="flex space-x-6 text-gray-600">
+                                    ${navLinksHtml}
+                                </ul>
+                            </nav>
+                            <div class="flex items-center space-x-4">
+                                <button class="p-2 rounded-full hover:bg-gray-100 text-gray-500" onclick="alert('Notificações (Simulado)')">
+                                    <i data-feather="bell" class="w-5 h-5"></i>
+                                </button>
+                                <img src="https://ui-avatars.com/api/?name=User&background=3B82F6&color=fff&bold=true" alt="User Avatar" class="w-9 h-9 rounded-full border-2 border-blue-400" onclick="alert('Perfil (Simulado)')">
+                                <button class="p-2 rounded-lg bg-gray-100 hover:bg-red-100 text-red-600" onclick="logout()">
+                                    <i data-feather="log-out" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                `;
+                // Garante que os ícones do feather sejam substituídos no Light DOM
+                feather.replace();
+            }
+        }
+        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+    </script>
+    <serviceflow-navbar></serviceflow-navbar>
+
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <h1 class="text-3xl font-bold text-gray-800">Resumo Financeiro Baseado em RATs</h1>
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-blue-50 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-600 text-sm">Total de RATs Fechados</p>
+                        <h4 class="text-3xl font-bold text-gray-800" id="total-services">24</h4>
+                    </div>
+                    <i data-feather="tool" class="w-8 h-8 text-blue-400"></i>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-green-600 text-sm">Valor Total Devido</p>
+                        <h4 class="text-3xl font-bold text-gray-800" id="total-amount">R$ 12.450,00</h4>
+                    </div>
+                    <i data-feather="dollar-sign" class="w-8 h-8 text-green-400"></i>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-red-600 text-sm">Horas Extras Faturadas</p>
+                        <h4 class="text-3xl font-bold text-gray-800" id="extra-hours">15.5h</h4>
+                    </div>
+                    <i data-feather="clock" class="w-8 h-8 text-red-400"></i>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="financialChart"></canvas>
+            </div>
+        </div>
+
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Histórico de Acertos (Mês a Mês)</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mês/Ano</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total RATs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas Extras</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Faturado</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="reports-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="acerto-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center transition duration-300 opacity-0" onclick="toggleModal('acerto-modal', false)">
+        <div class="modal-content bg-white p-6 rounded-lg shadow-2xl w-full max-w-lg transform scale-95 transition-all" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Acerto de Contas Mensal</h3>
+                <button onclick="toggleModal('acerto-modal', false)" class="text-gray-400 hover:text-gray-600 transition duration-150">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div id="acerto-list" class="space-y-3">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let financialChart;
+        let qrCodeCanvas;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupReports();
+            feather.replace();
+        });
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            const content = modal.querySelector('.modal-content');
+
+            if (show) {
+                modal.classList.remove('hidden');
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+                feather.replace();
+            } else {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // ===================================================
+        // LÓGICA DO RAT E CÁLCULO DE CUSTO (Para Transparência)
+        // ===================================================
+
+        /**
+         * Calcula o custo do chamado conforme a regra do Termo de Referência.
+         * R$ 100,00 para até 2 horas de serviço.
+         * R$ 20,00 por hora adicional.
+         */
+        function calculateCost(hours) {
+            const BASE_HOURS = 2.0;
+            const BASE_COST = 100.00;
+            const EXTRA_HOUR_COST = 20.00;
+
+            let total_value = BASE_COST;
+            let extra_hours_calculated = 0;
+
+            if (hours > BASE_HOURS) {
+                extra_hours_calculated = hours - BASE_HOURS;
+                total_value += extra_hours_calculated * EXTRA_HOUR_COST;
+            }
+
+            return {
+                total_value: total_value.toFixed(2).replace('.', ','),
+                extra_hours: extra_hours_calculated.toFixed(1).replace('.', ','),
+                base_cost: BASE_COST.toFixed(2).replace('.', ',')
+            };
+        }
+
+        // ===================================================
+        // RENDERIZAÇÃO E DADOS
+        // ===================================================
+
+        function setupReports() {
+            renderReportsTable();
+            renderFinancialChart();
+            renderPixQRCode();
+        }
+
+        const reportData = [
+            { month: 'Set/2025', total_rats: 15, extra_hours: 5.0, amount: 1600.00, status: 'Pago' },
+            { month: 'Out/2025', total_rats: 18, extra_hours: 6.5, amount: 1930.00, status: 'Vencido' },
+            { month: 'Nov/2025', total_rats: 12, extra_hours: 1.0, amount: 1220.00, status: 'Aberto' },
+        ];
+
+        const pendingAmount = reportData.filter(d => d.status !== 'Pago').reduce((sum, d) => sum + d.amount, 0);
+        document.getElementById('banner-pending-amount').textContent = pendingAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+
+        function renderReportsTable() {
+            const tableBody = document.getElementById('reports-table-body');
+            tableBody.innerHTML = reportData.map(item => {
+                let statusClass;
+                let actionButton;
+
+                switch (item.status) {
+                    case 'Pago':
+                        statusClass = 'text-green-600 font-medium';
+                        actionButton = `<button onclick="handleAction('Gerar Recibo', '${item.month}')" class="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded-lg transition duration-150">Recibo</button>`;
+                        break;
+                    case 'Vencido':
+                        statusClass = 'text-red-600 font-bold';
+                        actionButton = `<button onclick="handleAction('Gerar Boleto', '${item.month}', ${item.amount})" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg transition duration-150">Pagar Agora</button>`;
+                        break;
+                    case 'Aberto':
+                    default:
+                        statusClass = 'text-yellow-600 font-medium';
+                        actionButton = `<button onclick="handleAction('Gerar Boleto', '${item.month}', ${item.amount})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded-lg transition duration-150">Faturar</button>`;
+                        break;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.month}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.total_rats}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.extra_hours.toFixed(1).replace('.', ',')}h</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${item.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${item.status}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+            feather.replace();
+        }
+
+        function renderFinancialChart() {
+            if (financialChart) {
+                financialChart.destroy();
+            }
+            const ctx = document.getElementById('financialChart').getContext('2d');
+            financialChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: reportData.map(d => d.month),
+                    datasets: [{
+                        label: 'Valor Faturado (R$)',
+                        data: reportData.map(d => d.amount),
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)', // green-500
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: false } },
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+
+        /**
+         * Função para simular a renderização de um QR Code no canvas do banner.
+         */
+        function renderPixQRCode() {
+            const canvas = document.getElementById('pix-banner-qrcode');
+            const context = canvas.getContext('2d');
+            const size = canvas.width;
+
+            context.clearRect(0, 0, size, size); // Limpa o canvas
+
+            // Simula um padrão simples de QR Code
+            context.fillStyle = '#000000';
+            for (let i = 0; i < size; i += 4) {
+                for (let j = 0; j < size; j += 4) {
+                    if ((i + j) % 8 === 0) {
+                        context.fillRect(i, j, 2, 2);
+                    }
+                }
+            }
+            // Adiciona os 3 quadrados de identificação de QR code (canto)
+            context.fillRect(0, 0, 10, 10);
+            context.fillRect(size - 10, 0, 10, 10);
+            context.fillRect(0, size - 10, 10, 10);
+        }
+
+        function openAcertoModal() {
+            const listContainer = document.getElementById('acerto-list');
+            listContainer.innerHTML = ''; // Limpa a lista
+
+            const pendingReports = reportData.filter(d => d.status !== 'Pago');
+
+            if (pendingReports.length === 0) {
+                listContainer.innerHTML = '<div class="text-center p-4 text-green-600 font-semibold">Não há pendências de pagamento no momento!</div>';
+            } else {
+                 listContainer.innerHTML = `
+                    <div class="p-3 bg-red-100 border border-red-300 rounded-lg">
+                        <p class="font-bold text-red-700">Total Pendente: ${pendingAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        <p class="text-sm text-red-600 mt-1">Clique em 'Pagar Agora' para gerar o Boleto/PIX.</p>
+                    </div>
+                `;
+
+                pendingReports.forEach(item => {
+                    const statusText = item.status === 'Vencido' ? 'VENCIDO' : 'FATURAR';
+                    const buttonClass = item.status === 'Vencido' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700';
+
+                    const itemHTML = `
+                        <div class="p-4 border rounded-lg flex items-center justify-between bg-white shadow-sm">
+                            <div>
+                                <p class="font-semibold text-gray-800">${item.month}</p>
+                                <p class="text-xs text-gray-500">RATs: ${item.total_rats} | Horas Extra: ${item.extra_hours.toFixed(1).replace('.', ',')}h</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-gray-900">${item.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                <button onclick="handleAction('Gerar Boleto', '${item.month}', ${item.amount}); toggleModal('acerto-modal', false);"
+                                    class="${buttonClass} text-white text-xs px-3 py-1 rounded-lg transition duration-150 mt-1">
+                                    ${statusText}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.insertAdjacentHTML('beforeend', itemHTML);
+                });
+            }
+
+            toggleModal('acerto-modal', true);
+        }
+
+        /**
+         * Funçãopara simular o processo de download de boleto e pagamento via PIX.
+         * @param {string} action - Ação a ser executada ('Gerar Boleto' ou 'Gerar Recibo').
+         * @param {string} month - O mês/período de referência.
+         * @param {number} amount - O valor.
+         */
+        function handleAction(action, month, amount = 0) {
+            const formattedAmount = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            switch(action) {
+                case 'Gerar Boleto':
+                    // **SIMULAÇÃO DE GATEWAY DE PAGAMENTO**
+
+                    // 1. Simula a Geração do Boleto (Download)
+                    alert(`[SIMULAÇÃO] Boleto para ${month} no valor de ${formattedAmount} gerado com sucesso! Um arquivo PDF simulado será baixado.`);
+
+                    // 2. Simula a Opção de PIX (com código de teste)
+                    const pixCode = '00020126330014BR.GOV.BC.PIX011112345678912345204000053039865405' + (amount * 100).toFixed(0).padStart(5, '0');
+
+                    if (confirm(`[SIMULAÇÃO PIX] Você pode pagar via PIX.
+- Valor: ${formattedAmount}
+- Vencimento: ${month.split('/')[0]}/2025
+- Chave: backinformatica@pix.com.br
+- Deseja simular a cópia do código Pix Copia e Cola?`)) {
+
+                        // Tenta usar a API de Clipboard para simular a cópia
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(pixCode).then(() => {
+                                alert('✅ Código PIX Copia e Cola simulado copiado para a área de transferência! (Simulação)');
+                            }).catch(() => {
+                                alert(`Simulação de cópia falhou. O código PIX Copia e Cola seria:\n${pixCode}`);
+                            });
+                        } else {
+                             alert(`Simulação de cópia falhou (API indisponível). O código PIX Copia e Cola seria:\n${pixCode}`);
+                        }
+                    }
+
+                    break;
+                case 'Gerar Recibo':
+                    alert(`Ação: Gerar Recibo de Pagamento para ${month}. Um documento simulado será baixado. (Simulação)`);
+                    break;
+                default:
+                    alert(`Ação desconhecida: ${action}`);
+            }
+        }
+    </script>
+</body>
+</html>

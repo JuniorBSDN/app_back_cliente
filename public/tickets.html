@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackInformatica - Central de Atendimento | Todos Chamados</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+    <style>
+        .modal-content {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <script>
+        // ===================================================
+        // 0. VERIFICAÇÃO DE AUTENTICAÇÃO (Padronizado)
+        // ===================================================
+        (function checkAuth() {
+            // Adicionado suporte para diferentes chaves de login para compatibilidade
+            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user') || localStorage.getItem('isLoggedIn');
+
+            if (!user) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            console.log(`Usuário autenticado. Carregando página.`);
+        })();
+
+        // ===================================================
+        // 1. FUNÇÃO LOGOUT (Padronizado)
+        // ===================================================
+        function logout() {
+            // Remove as sessões de login de ambas as áreas de armazenamento
+            sessionStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            // Redireciona para a página de login
+            window.location.replace('index.html');
+        }
+
+        // ===================================================
+        // 2. WEB COMPONENT: ServiceflowNavbar (Padronizado)
+        // Implementação sem Shadow DOM (Igual ao dash.html)
+        // ===================================================
+        class ServiceflowNavbar extends HTMLElement {
+            connectedCallback() {
+                // Obtém o nome do arquivo da URL atual (Ex: tickets.html)
+                const currentPath = window.location.pathname.split('/').pop();
+
+                const links = [
+                    { href: "dash.html", text: "Dashboard" },
+                    { href: "tickets.html", text: "Chamados" },
+                    { href: "reports.html", text: "Relatórios" },
+                ];
+
+                const navLinksHtml = links.map(link => {
+                    // Verifica se o link atual corresponde à página
+                    const isActive = currentPath === link.href;
+                    const activeClasses = "font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
+                    const inactiveClasses = "hover:text-blue-600 transition duration-150";
+                    const classes = isActive ? activeClasses : inactiveClasses;
+                    return `<li><a href="${link.href}" class="${classes}">${link.text}</a></li>`;
+                }).join('');
+
+                this.innerHTML = `
+                    <header class="bg-white shadow-md">
+                        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                            <div class="text-2xl font-bold text-blue-600">Back Informatica - Soluções técnologicas</div>
+                            <nav class="hidden md:block">
+                                <ul class="flex space-x-6 text-gray-600">
+                                    ${navLinksHtml}
+                                </ul>
+                            </nav>
+                            <div class="flex items-center space-x-4">
+                                <button class="p-2 rounded-full hover:bg-gray-100 text-gray-500" onclick="alert('Notificações (Simulado)')">
+                                    <i data-feather="bell" class="w-5 h-5"></i>
+                                </button>
+                                <img src="https://ui-avatars.com/api/?name=User&background=3B82F6&color=fff&bold=true" alt="User Avatar" class="w-9 h-9 rounded-full border-2 border-blue-400" onclick="alert('Perfil (Simulado)')">
+                                <button class="p-2 rounded-lg bg-gray-100 hover:bg-red-100 text-red-600" onclick="logout()">
+                                    <i data-feather="log-out" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                `;
+                // Garante que os ícones do feather sejam substituídos no Light DOM
+                feather.replace();
+            }
+        }
+        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+    </script>
+    <serviceflow-navbar></serviceflow-navbar>
+
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+            <h1 class="text-3xl font-bold text-gray-800">Todos os Chamados</h1>
+
+            <div class="flex space-x-4 w-full md:w-auto">
+                <div class="relative w-1/2 md:w-auto">
+                    <select id="ticket-filter" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
+                        <option value="all">Todos</option>
+                        <option value="ongoing">Em Andamento</option>
+                        <option value="completed">Concluídos</option>
+                        <option value="pending">Pendentes</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i data-feather="chevron-down" class="w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <button onclick="window.location.href='newTicket.html'" class="w-1/2 md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition duration-150">
+    <i data-feather="plus" class="w-5 h-5 mr-2"></i> Novo Chamado
+</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                <h3 class="text-lg font-semibold">Lista de Chamados</h3>
+                <div class="flex items-center w-full md:w-auto">
+                    <div class="relative w-full">
+                        <input type="text" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <i data-feather="search" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Equipamento</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Técnico</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Data</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="tickets-table">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="cost-details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center transition duration-300 opacity-0" onclick="toggleModal('cost-details-modal', false)">
+        <div class="modal-content bg-white p-6 rounded-lg shadow-2xl w-full max-w-lg transform scale-95 transition-all" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Detalhes do Relatório Técnico (RAT)</h3>
+                <button onclick="toggleModal('cost-details-modal', false)" class="text-gray-400 hover:text-gray-600 transition duration-150">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div id="cost-details-content" class="space-y-4">
+                </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTicketsTable();
+            // feather.replace() é chamado dentro do componente ServiceflowNavbar no novo script
+        });
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            const content = modal.querySelector('.modal-content');
+
+            if (show) {
+                modal.classList.remove('hidden');
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+                feather.replace();
+            } else {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // ===================================================
+        // LÓGICA DO RAT E CÁLCULO DE CUSTO (Para Transparência)
+        // ===================================================
+
+        /**
+         * Calcula o custo do chamado conforme a regra do Termo de Referência.
+         * R$ 100,00 para até 2 horas de serviço.
+         * R$ 20,00 por hora adicional.
+         */
+        function calculateCost(hours) {
+            const BASE_HOURS = 2.0;
+            const BASE_COST = 100.00;
+            const EXTRA_HOUR_COST = 20.00;
+
+            let total_value = BASE_COST;
+            let extra_hours_calculated = 0;
+
+            if (hours > BASE_HOURS) {
+                extra_hours_calculated = hours - BASE_HOURS;
+                total_value += extra_hours_calculated * EXTRA_HOUR_COST;
+            }
+
+            return {
+                total_value: total_value.toFixed(2).replace('.', ','),
+                extra_hours: extra_hours_calculated.toFixed(1).replace('.', ','),
+                base_cost: BASE_COST.toFixed(2).replace('.', ',')
+            };
+        }
+
+        function renderTicketsTable() {
+            // Simulação de Chamados
+            const tickets = [
+                { id: 108, requester: 'Secretaria', equipment: 'Internet Lenta', technician: 'José Airton', status: 'Pendente', date: '2025-10-26', hours: 0 },
+                { id: 107, requester: 'Gabinete', equipment: 'Desktop do Secretário', technician: 'José Airton', status: 'Concluído', date: '2025-10-25', hours: 3.5 },
+                { id: 106, requester: 'Financeiro', equipment: 'Impressora Fiscal', technician: 'Sem Alocação', status: 'Em Andamento', date: '2025-10-25', hours: 0 },
+                { id: 105, requester: 'Administrativo', equipment: 'Servidor Principal', technician: 'José Airton', status: 'Concluído', date: '2025-10-24', hours: 2.0 },
+                { id: 104, requester: 'Almoxarifado', equipment: 'Cabo de Rede', technician: 'José Airton', status: 'Concluído', date: '2025-10-23', hours: 1.0 },
+            ];
+
+            const tableBody = document.getElementById('tickets-table');
+            tableBody.innerHTML = tickets.map(ticket => {
+                let statusClass;
+                let actionButton;
+                let technicianName = ticket.technician;
+
+                switch (ticket.status) {
+                    case 'Concluído':
+                        statusClass = 'text-green-600 font-medium';
+                        actionButton = `<button onclick="showCostDetails('${ticket.id}', ${ticket.hours})" class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-lg transition duration-150">Ver RAT</button>`;
+                        break;
+                    case 'Em Andamento':
+                        statusClass = 'text-yellow-600 font-medium';
+                        actionButton = `<button onclick="alert('Chamado em atendimento, aguarde o RAT.')" class="bg-gray-400 text-white text-xs px-3 py-1 rounded-lg cursor-not-allowed">Em Atendimento</button>`;
+                        break;
+                    case 'Pendente':
+                    default:
+                        statusClass = 'text-red-600 font-medium';
+                        actionButton = `<button onclick="alert('Chamado Pendente, aguarde a alocação do técnico.')" class="bg-gray-400 text-white text-xs px-3 py-1 rounded-lg cursor-not-allowed">Pendente</button>`;
+                        technicianName = 'Aguardando';
+                        break;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${ticket.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ticket.requester}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">${ticket.equipment}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">${technicianName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${ticket.status}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">${ticket.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+            feather.replace();
+        }
+
+        // Função para exibir os detalhes do RAT no modal
+        function showCostDetails(ticketId, hours) {
+            const costData = calculateCost(hours);
+            const content = document.getElementById('cost-details-content');
+
+            content.innerHTML = `
+                <div class="border-b pb-2 mb-3">
+                    <h4 class="text-lg font-semibold text-blue-700">Relatório Técnico Detalhado (RAT) - Chamado #${ticketId}</h4>
+                </div>
+
+                <p class="text-gray-700">
+                    <span class="font-semibold">Horas Totais de Serviço:</span> ${hours} horas
+                </p>
+                <p class="text-gray-700">
+                    <span class="font-semibold">Custo Base (Até 2h):</span> R$ ${costData.base_cost}
+                </p>
+                <p class="text-gray-700 ${costData.extra_hours > 0 ? 'text-red-600' : 'text-green-600'}">
+                    <span class="font-semibold">Horas Adicionais:</span> ${costData.extra_hours} horas
+                </p>
+                <p class="text-2xl font-extrabold mt-4 p-3 bg-green-100 text-green-700 rounded-lg">
+                    CUSTO TOTAL DO CHAMADO (RAT): R$ ${costData.total_value}
+                </p>
+
+                <div class="mt-4 pt-4 border-t">
+                    <p class="text-sm text-gray-500 mb-2">Solução Final Registrada pelo Técnico:</p>
+                    <p class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        O problema foi corrigido, o sistema está operacional. Tempo total: ${hours} horas.
+                    </p>
+                </div>
+
+                <button onclick="printTicket('${ticketId}')" class="w-full mt-4 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600">
+                    <i data-feather="printer" class="w-5 h-5 inline mr-2"></i> Imprimir RAT
+                </button>
+            `;
+            toggleModal('cost-details-modal', true);
+        }
+
+        function printTicket(ticketId) {
+            alert(`Gerando relatório (PDF) detalhado para o Chamado #${ticketId}. (Simulado)`);
+            toggleModal('cost-details-modal', false);
+        }
+
+        // Evento de filtro
+        document.getElementById('ticket-filter').addEventListener('change', function() {
+            const filter = this.value;
+            alert(`Filtrando chamados por: ${filter} (Funcionalidade simulada)`);
+            // Em uma implementação real, você chamaria uma função para recarregar a tabela com os dados filtrados.
+        });
+    </script>
+</body>
+</html>

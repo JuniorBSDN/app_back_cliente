@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>conect Back | Login</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+    <style>
+        .login-bg {
+            background-image: url('https://source.unsplash.com/random/1600x900/?technology,network');
+            background-size: cover;
+            background-position: center;
+        }
+        .modal-content {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-200 login-bg">
+
+    <div class="bg-white p-8 md:p-10 rounded-xl shadow-2xl w-full max-w-md backdrop-filter backdrop-blur-sm bg-opacity-95">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-blue-600">conect Back</h1>
+            <p class="text-gray-500 mt-2">Acesse sua plataforma</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Usuário (CNPJ/CPF)</label>
+                <input type="text" id="username" name="username" required
+                       placeholder="Digite seu usuário ou documento"
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                <input type="password" id="password" name="password" required
+                       placeholder="Sua senha de acesso"
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember-me" type="checkbox"
+                           class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                        Lembrar-me
+                    </label>
+                </div>
+                <a href="#" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition duration-150">
+                    Esqueceu a senha?
+                </a>
+            </div>
+
+            <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                <i data-feather="log-in" class="w-5 h-5 mr-2"></i>
+                Acessar Plataforma
+            </button>
+        </form>
+    </div>
+
+    <div id="blocked-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm modal-content transform scale-95">
+
+            <div class="p-6 text-center">
+                <i data-feather="lock" class="w-12 h-12 text-red-600 mx-auto mb-4"></i>
+                <h3 class="text-xl font-bold text-red-700 mb-2">Conta Bloqueada</h3>
+                <p class="text-gray-600 mb-6">Sua conta possui pendências financeiras. Regularize para continuar usando o ServiceFlow.</p>
+
+                <div class="space-y-3">
+                    <button onclick="openAcertoLink()" class="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-150">
+                        <i data-feather="dollar-sign" class="w-5 h-5 mr-2"></i>
+                        Ir para Acerto Financeiro
+                    </button>
+                    <button onclick="openSupportLink()" class="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
+                        <i data-feather="phone-call" class="w-5 h-5 mr-2"></i>
+                        Falar com Suporte
+                    </button>
+                    <button onclick="closeBlockedModal()" class="w-full text-sm text-gray-500 hover:text-gray-700 pt-2 transition duration-150">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            checkSession();
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+        });
+
+        // Simulação de base de dados de usuários
+        const MOCK_USERS = [
+            // CORRIGIDO: Redirecionamento para 'dash.html'
+            { username: 'cx', password: '123', status: 'active', redirect: 'dash.html' },
+            { username: 'bloqueado456', password: '456', status: 'blocked' },
+            { username: 'invalido789', password: '789', status: 'active' },
+        ];
+
+        // ===================================================
+        // LÓGICA DE AUTENTICAÇÃO E SESSÃO
+        // ===================================================
+
+        function setSession(username, rememberMe) {
+            if (rememberMe) {
+                localStorage.setItem('serviceflow_user', username);
+            }
+            sessionStorage.setItem('serviceflow_user', username);
+        }
+
+        function checkSession() {
+            // Verifica se o usuário já está logado via sessionStorage ou localStorage
+            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user');
+
+            if (user) {
+                // Simula a verificação do status do usuário logado (Idealmente seria uma chamada API)
+                const mockUser = MOCK_USERS.find(u => u.username === user && u.status === 'active');
+                if (mockUser) {
+                    // Se a sessão for válida e o usuário ativo, redireciona
+                    // CORRIGIDO: Redireciona para o valor de 'redirect' do mockUser, que agora é 'dash.html'
+                    window.location.replace(mockUser.redirect || 'dash.html');
+                } else if (MOCK_USERS.find(u => u.username === user && u.status === 'blocked')) {
+                    // Se estiver bloqueado, mostra o modal
+                    openBlockedModal();
+                } else {
+                    // Sessão inválida ou usuário não encontrado (apaga sessão e espera login)
+                    clearSession();
+                }
+            }
+        }
+
+        function clearSession() {
+            sessionStorage.removeItem('serviceflow_user');
+            localStorage.removeItem('serviceflow_user');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            // 1. Busca o usuário (Simulação de chamada API)
+            const user = MOCK_USERS.find(u => u.username === username);
+
+            if (!user) {
+                alert('Erro: Usuário não encontrado.');
+                return;
+            }
+
+            // 2. Verifica a senha (Simulação)
+            if (user.password !== password) {
+                alert('Erro: Senha incorreta.');
+                return;
+            }
+
+            // 3. Verifica o Status
+            if (user.status === 'blocked') {
+                // Usuário bloqueado: não loga, mostra modal de acerto/suporte
+                setSession(user.username, false); // Define a sessão temporariamente para o checkSession futuro
+                openBlockedModal();
+                return;
+            }
+
+            // 4. Login bem-sucedido (status: 'active')
+            setSession(user.username, rememberMe);
+            alert(`Bem-vindo, ${username}! Redirecionando...`);
+            // CORRIGIDO: Redirecionamento final para 'dash.html'
+            window.location.replace(user.redirect || 'dash.html');
+        }
+
+        // ===================================================
+        // LÓGICA DO MODAL DE BLOQUEIO
+        // ===================================================
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            const content = modal.querySelector('.modal-content');
+
+            if (show) {
+                modal.classList.remove('hidden');
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+                feather.replace();
+            } else {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function openBlockedModal() {
+            toggleModal('blocked-modal', true);
+        }
+
+        function closeBlockedModal() {
+            // Limpa a sessão ao fechar o modal, forçando o login novamente
+            clearSession();
+            toggleModal('blocked-modal', false);
+        }
+
+        function openAcertoLink() {
+            // Substitua pelo link real do seu portal de pagamento
+            window.open('link-para-portal-de-acerto.html', '_blank');
+        }
+
+        function openSupportLink() {
+            // Substitua pelo link real (ex: WhatsApp, formulário de contato)
+            window.open('link-para-suporte-whatsapp-ou-site.html', '_blank');
+        }
+    </script>
+</body>
+</html>
