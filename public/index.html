@@ -104,10 +104,7 @@
 
         // Simulação de banco de dados: apenas o usuário 'admin' tem acesso.
         // O usuário 'bloqueado' simula um bloqueio por pendência financeira.
-        const VALID_USERS = {
-            'admin': { password: '123', is_blocked: false },
-            'bloqueado': { password: '123', is_blocked: true }
-        };
+        const VALID_USERS = CREDENCIAIS;
 
         // ===================================================
         // Funções de Login
