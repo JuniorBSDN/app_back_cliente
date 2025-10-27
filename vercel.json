@@ -1,14 +1,19 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/back_informatica.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "50mb" }
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/back_informatica.py" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=1, stale-while-revalidate"
+        }
+      ]
+    }
   ]
 }
