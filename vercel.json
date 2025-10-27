@@ -1,5 +1,14 @@
 {
-  "rewrites": [
-    { "source": "/api/tickets/(?<id>[^/]+)", "destination": "/api/ticket_detail" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/back_informatica.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "50mb" }
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/back_informatica.py" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

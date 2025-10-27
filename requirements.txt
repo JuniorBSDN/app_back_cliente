@@ -1,2 +1,5 @@
-Flask
-firebase-admin
+Flask==2.2.5
+flask-cors==3.0.10
+firebase-admin==6.3.0
+google-cloud-firestore==2.11.3
+in # Para análise de datas

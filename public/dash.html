@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>conect Back | Dashboard</title>
+    <title>Back Informática | Dashboard</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <style>
         .modal-content {
@@ -31,10 +35,9 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
-    <serviceflow-navbar></serviceflow-navbar>
+    <back-informatica-navbar></back-informatica-navbar>
 <br>
     <h3 class="text-3xl font-bold text-gray-800">Resumo de chamado</h3>
-    <!--RESUMO DE ATENDIMENTOS-->
     <main class="container mx-auto px-4 py-6 flex-grow">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6 flex items-center summary-card" onclick="openStatusModal('ongoing')">
@@ -91,8 +94,23 @@
                 </table>
             </div>
         </div>
-    </main>
 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Atendimentos por Status</h3>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Atendimentos Mensais</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
     <div id="action-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md modal-content transform scale-95">
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -138,22 +156,7 @@
         </div>
     </div>
 
-     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold mb-4">Atendimentos por Status</h3>
-                <div class="chart-container">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold mb-4">Atendimentos Mensais</h3>
-                <div class="chart-container">
-                    <canvas id="monthlyChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-    <serviceflow-footer></serviceflow-footer>
+    <back-informatica-footer></back-informatica-footer>
 
     <script>
         // ===================================================
@@ -161,7 +164,7 @@
         // ===================================================
         (function checkAuth() {
             // Verifica se existe uma sessão ativa (seja sessionStorage ou localStorage)
-            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user');
+            const user = sessionStorage.getItem('back_informatica_user') || localStorage.getItem('back_informatica_user');
 
             // Se o usuário não estiver autenticado, redireciona para a página de login (index.html)
             if (!user) {
@@ -178,17 +181,19 @@
         // ===================================================
         function logout() {
             // Remove a sessão de ambas as áreas de armazenamento
-            sessionStorage.removeItem('serviceflow_user');
-            localStorage.removeItem('serviceflow_user');
+            sessionStorage.removeItem('back_informatica_user');
+            localStorage.removeItem('back_informatica_user');
+
             // Redireciona para a página de login
             window.location.replace('index.html');
         }
 
         // ===================================================
-        // 2. WEB COMPONENT: ServiceflowNavbar (Padronizado)
+        // 2. WEB COMPONENT: BackInformaticaNavbar (Padronizado)
         // ===================================================
-        class ServiceflowNavbar extends HTMLElement {
+        class BackInformaticaNavbar extends HTMLElement {
             connectedCallback() {
+                // Obtém o nome do arquivo da URL atual (Ex: dash.html)
                 const currentPath = window.location.pathname.split('/').pop();
 
                 const links = [
@@ -198,7 +203,9 @@
                 ];
 
                 const navLinksHtml = links.map(link => {
-                    const isActive = currentPath === link.href || (currentPath === '' && link.href === 'dash.html');
+                    // Verifica se o link atual corresponde à página
+                    const isActive = currentPath === link.href;
+                    // Classes de destaque
                     const activeClasses = "font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
                     const inactiveClasses = "hover:text-blue-600 transition duration-150";
                     const classes = isActive ? activeClasses : inactiveClasses;
@@ -208,7 +215,7 @@
                 this.innerHTML = `
                     <header class="bg-white shadow-md">
                         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                            <div class="text-2xl font-bold text-blue-600">Back Informatica - Soluções técnologicas</div>
+                            <div class="text-2xl font-bold text-blue-600">Back Informática - Soluções técnologicas</div>
                             <nav class="hidden md:block">
                                 <ul class="flex space-x-6 text-gray-600">
                                     ${navLinksHtml}
@@ -226,158 +233,121 @@
                         </div>
                     </header>
                 `;
+                // Garante que os ícones do feather sejam substituídos no Light DOM
                 feather.replace();
             }
         }
-        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+        customElements.define('back-informatica-navbar', BackInformaticaNavbar);
 
-        class ServiceflowFooter extends HTMLElement {
+
+        // ===================================================
+        // 3. WEB COMPONENT: BackInformaticaFooter (Padronizado)
+        // ===================================================
+        class BackInformaticaFooter extends HTMLElement {
             connectedCallback() {
                 this.innerHTML = `
-                    <footer class="bg-white border-t border-gray-200 mt-auto">
-                        <div class="container mx-auto px-4 py-4 text-center text-sm text-gray-500">
-                            &copy; ${new Date().getFullYear()} ServiceFlow. Todos os direitos reservados.
+                    <footer class="bg-gray-800 text-white py-4 mt-auto">
+                        <div class="container mx-auto px-4 text-center text-sm">
+                            &copy; ${new Date().getFullYear()} Back Informática - Soluções tecnólogicas. Todos os direitos reservados.
                         </div>
                     </footer>
                 `;
-                feather.replace();
             }
         }
-        customElements.define('serviceflow-footer', ServiceflowFooter);
-
+        customElements.define('back-informatica-footer', BackInformaticaFooter);
 
         // ===================================================
-        // 2. LÓGICA GERAL E DADOS
+        // 4. FUNÇÕES DE MODAL E AÇÕES DE TICKET (Específico desta página)
         // ===================================================
 
-        // Dados de exemplo para a lista de status
-        const allTicketsData = [
-            { id: 'TKT-001', requester: 'João Silva', equipment: 'Dell XPS 15', status: 'Em Andamento', date: '15/06/2023' },
-            { id: 'TKT-002', requester: 'Maria Oliveira', equipment: 'HP ProBook 450', status: 'Concluído', date: '14/06/2023' },
-            { id: 'TKT-003', requester: 'Carlos Souza', equipment: 'Lenovo ThinkPad', status: 'Pendente', date: '13/06/2023' },
-            { id: 'TKT-004', requester: 'Ana Costa', equipment: 'MacBook Pro', status: 'Concluído', date: '12/06/2023' },
-            { id: 'TKT-005', requester: 'Pedro Santos', equipment: 'Dell OptiPlex', status: 'Em Andamento', date: '11/06/2023' },
-            { id: 'TKT-006', requester: 'Paula Rego', equipment: 'Impressora HP', status: 'Concluído', date: '10/06/2023' },
-            { id: 'TKT-007', requester: 'Felipe Melo', equipment: 'Monitor LG', status: 'Em Andamento', date: '09/06/2023' },
-            { id: 'TKT-008', requester: 'Laura Gomes', equipment: 'Servidor Dell', status: 'Pendente', date: '08/06/2023' },
-            { id: 'TKT-009', requester: 'Marcos Viana', equipment: 'Mouse Logitech', status: 'Em Andamento', date: '07/06/2023' },
-            { id: 'TKT-010', requester: 'Sofia Neves', equipment: 'Teclado Mecânico', status: 'Concluído', date: '06/06/2023' },
-            { id: 'TKT-011', requester: 'Gabriel Dias', equipment: 'Roteador Cisco', status: 'Em Andamento', date: '05/06/2023' },
-            { id: 'TKT-012', requester: 'Helena Lima', equipment: 'Notebook Acer', status: 'Concluído', date: '04/06/2023' },
-        ];
+        function getTicketData(status) {
+            // Dados simulados para o dashboard
+            const allTickets = [
+                // ... (Seu código JS de simulação de dados)
+                { id: 'TKT-001', requester: 'Maria Silva', equipment: 'Notebook HP', status: 'completed', date: '2025-09-01' },
+                { id: 'TKT-002', requester: 'João Santos', equipment: 'Impressora Epson', status: 'ongoing', date: '2025-09-02' },
+                { id: 'TKT-003', requester: 'Ana Souza', equipment: 'Servidor Dell', status: 'pending', date: '2025-09-03' },
+                { id: 'TKT-004', requester: 'Pedro Lima', equipment: 'Desktop Lenovo', status: 'completed', date: '2025-09-04' },
+                { id: 'TKT-005', requester: 'Carla Dias', equipment: 'Roteador Cisco', status: 'ongoing', date: '2025-09-05' },
+                { id: 'TKT-006', requester: 'Bruno Costa', equipment: 'Monitor Samsung', status: 'completed', date: '2025-09-06' },
+                { id: 'TKT-007', requester: 'Daniela Reis', equipment: 'Teclado Multilaser', status: 'completed', date: '2025-09-07' },
+                { id: 'TKT-008', requester: 'Fernando Alves', equipment: 'Mouse Logitech', status: 'ongoing', date: '2025-09-08' },
+                { id: 'TKT-009', requester: 'Gabriel Rocha', equipment: 'Webcam', status: 'completed', date: '2025-09-09' },
+                { id: 'TKT-010', requester: 'Helena Ferreira', equipment: 'Scanner', status: 'pending', date: '2025-09-10' },
+                { id: 'TKT-011', requester: 'Igor Gomes', equipment: 'Switch TP-Link', status: 'ongoing', date: '2025-09-11' },
+                { id: 'TKT-012', requester: 'Julia Martins', equipment: 'Notebook Dell', status: 'completed', date: '2025-09-12' },
+                { id: 'TKT-013', requester: 'Lucas Nunes', equipment: 'Impressora Brother', status: 'completed', date: '2025-09-13' },
+                { id: 'TKT-014', requester: 'Mariana Pires', equipment: 'Servidor HP', status: 'ongoing', date: '2025-09-14' },
+                { id: 'TKT-015', requester: 'Ricardo Campos', equipment: 'Desktop HP', status: 'completed', date: '2025-09-15' },
+            ];
 
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Feather replace é chamado na função checkAuth também para garantir que os ícones do navbar apareçam após a checagem.
-            feather.replace();
-            initCharts();
-            loadTickets(); // Carrega os 5 últimos chamados na tabela principal
-
-            document.getElementById('ticket-form').addEventListener('submit', handleTicketFormSubmit);
-            document.getElementById('ticket-photos').addEventListener('change', handlePhotoUploadPreview);
-        });
-
-        // NOVO: Função de Logout (Adicionada)
-        function logout() {
-            sessionStorage.removeItem('serviceflow_user');
-            localStorage.removeItem('serviceflow_user');
-            alert('Sessão encerrada.');
-            window.location.replace('index.html'); // Redireciona para o novo index.html (Login)
-        }
-
-        // Função para pré-visualização das fotos (Mantida)
-        function handlePhotoUploadPreview(event) {
-            const previewContainer = document.getElementById('photos-preview');
-            previewContainer.innerHTML = '';
-            const files = event.target.files;
-
-            if (files.length === 0) {
-                 previewContainer.innerHTML = '<span class="text-sm text-gray-500 italic">Pré-visualização das imagens anexadas.</span>';
-                 return;
+            if (status === 'summary') {
+                return {
+                    ongoing: allTickets.filter(t => t.status === 'ongoing').length,
+                    completed: allTickets.filter(t => t.status === 'completed').length,
+                    pending: allTickets.filter(t => t.status === 'pending').length,
+                    latest: allTickets.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
+                };
+            } else if (status === 'charts') {
+                return {
+                    statusData: [
+                        allTickets.filter(t => t.status === 'ongoing').length,
+                        allTickets.filter(t => t.status === 'completed').length,
+                        allTickets.filter(t => t.status === 'pending').length
+                    ],
+                    monthlyData: [15, 22, 18, 25, 30, 42, 38, 45, 50, 48, 55, 60] // Simulação
+                };
+            } else {
+                return allTickets.filter(t => t.status === status);
             }
-
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'w-20 h-20 object-cover rounded-lg shadow-sm border border-gray-200';
-                        previewContainer.appendChild(img);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
         }
 
-        // Função principal para inicializar os gráficos (Mantida)
-        function initCharts() {
-            // Status Chart
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-            new Chart(statusCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Em Andamento', 'Concluídos', 'Pendentes'],
-                    datasets: [{
-                        data: [12, 42, 5],
-                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
+        // Função principal para carregar dados
+        function loadDashboardData() {
+            const summary = getTicketData('summary');
+            document.getElementById('ongoing-count').textContent = summary.ongoing;
+            document.getElementById('completed-count').textContent = summary.completed;
+            document.getElementById('pending-count').textContent = summary.pending;
 
-            // Monthly Chart
-            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-            new Chart(monthlyCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                    datasets: [{
-                        label: 'Atendimentos',
-                        data: [15, 19, 22, 18, 25, 30, 28, 32, 27, 24, 20, 17],
-                        backgroundColor: '#3B82F6',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        // Carrega dados de exemplo na tabela (Mantida)
-        function loadTickets() {
-            // Pega apenas os 5 primeiros tickets (últimos atendimentos)
-            const recentTickets = allTicketsData.slice(0, 5);
-
+            // Preencher a tabela de últimos atendimentos
             const tableBody = document.getElementById('tickets-table');
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = ''; // Limpa antes de preencher
 
-            recentTickets.forEach(ticket => {
+            summary.latest.forEach(ticket => {
+                // Lógica de classes de status (Mantida do original)
+                let statusClass = '';
+                let statusText = '';
+                switch (ticket.status) {
+                    case 'ongoing':
+                        statusClass = 'bg-blue-100 text-blue-800';
+                        statusText = 'Em Andamento';
+                        break;
+                    case 'completed':
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = 'Concluído';
+                        break;
+                    case 'pending':
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                        statusText = 'Pendente';
+                        break;
+                    default:
+                        statusClass = 'bg-gray-100 text-gray-800';
+                        statusText = 'Não Definido';
+                }
+
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ticket.id}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.requester}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.equipment}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.requester}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.equipment}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs rounded-full font-semibold ${getStatusClass(ticket.status)}">${ticket.status}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                            ${statusText}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${ticket.date}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <button onclick="showTicketActions('${ticket.id}')" class="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-gray-100 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(ticket.date).toLocaleDateString('pt-BR')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-center">
+                        <button onclick="openActionModal('${ticket.id}', '${ticket.status}')" class="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-100 transition duration-150">
                             <i data-feather="more-vertical" class="w-5 h-5"></i>
                         </button>
                     </td>
@@ -385,20 +355,81 @@
                 tableBody.appendChild(row);
             });
 
-            feather.replace();
+            // Carregar gráficos
+            loadCharts(getTicketData('charts'));
+            feather.replace(); // Substitui ícones após carregar a tabela
         }
 
-        function getStatusClass(status) {
-            switch(status) {
-                case 'Em Andamento': return 'bg-blue-100 text-blue-800';
-                case 'Concluído': return 'bg-green-100 text-green-800';
-                case 'Pendente': return 'bg-yellow-100 text-yellow-800';
-                default: return 'bg-gray-100 text-gray-800';
-            }
+        // Função para carregar os gráficos
+        function loadCharts(chartData) {
+            // Gráfico de Status
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Em Andamento', 'Concluídos', 'Pendentes'],
+                    datasets: [{
+                        data: chartData.statusData,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // Deixa o doughnut mais fino (AJUSTE)
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: false,
+                        }
+                    }
+                }
+            });
+
+            // Gráfico Mensal
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Chamados',
+                        data: chartData.monthlyData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            // Adiciona título ao eixo Y (AJUSTE)
+                            title: {
+                                display: true,
+                                text: 'Número de Chamados'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
 
         // ===================================================
-        // 3. FUNÇÕES DE CONTROLE DE MODAL (Melhoradas)
+        // 5. FUNÇÕES DE MODAL
         // ===================================================
 
         function toggleModal(modalId, show) {
@@ -407,68 +438,65 @@
 
             if (show) {
                 modal.classList.remove('hidden');
-                void modal.offsetWidth;
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-                feather.replace();
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    feather.replace(); // Garante ícones no modal
+                }, 10);
             } else {
                 content.classList.remove('scale-100');
                 content.classList.add('scale-95');
                 modal.classList.add('opacity-0');
-
-                if (modalId === 'new-ticket-modal') {
-                    document.getElementById('ticket-photos').value = '';
-                    document.getElementById('photos-preview').innerHTML = '';
-                }
-
                 setTimeout(() => {
                     modal.classList.add('hidden');
                 }, 300);
             }
         }
 
-        function openNewTicketModal() {
-            toggleModal('new-ticket-modal', true);
-        }
-
-        function closeNewTicketModal() {
-            toggleModal('new-ticket-modal', false);
-        }
-
         function closeActionModal() {
             toggleModal('action-modal', false);
         }
 
-        // NOVO: Funções para o Modal de Lista de Status
+        function closeStatusModal() {
+            toggleModal('status-list-modal', false);
+        }
 
-        const statusMap = {
-            ongoing: { title: 'Chamados Em Andamento', status: 'Em Andamento', color: 'blue' },
-            completed: { title: 'Chamados Concluídos', status: 'Concluído', color: 'green' },
-            pending: { title: 'Chamados Pendentes', status: 'Pendente', color: 'yellow' },
-        };
-
-        function openStatusModal(statusKey) {
-            const statusInfo = statusMap[statusKey];
-            if (!statusInfo) return;
-
-            document.getElementById('status-modal-title').textContent = statusInfo.title;
-
-            const filteredTickets = allTicketsData.filter(t => t.status === statusInfo.status);
+        function openStatusModal(status) {
+            const titleElement = document.getElementById('status-modal-title');
             const listBody = document.getElementById('status-modal-list');
-            listBody.innerHTML = '';
+            const tickets = getTicketData(status);
 
-            if (filteredTickets.length === 0) {
-                listBody.innerHTML = `<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500 italic">Nenhum chamado encontrado com o status: ${statusInfo.status}.</td></tr>`;
+            let titleText = '';
+            switch (status) {
+                case 'ongoing':
+                    titleText = 'Chamados Em Andamento';
+                    break;
+                case 'completed':
+                    titleText = 'Chamados Concluídos';
+                    break;
+                case 'pending':
+                    titleText = 'Chamados Pendentes';
+                    break;
+            }
+            titleElement.textContent = titleText;
+
+            listBody.innerHTML = '';
+            if (tickets.length === 0) {
+                listBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Nenhum chamado encontrado com este status.</td></tr>`;
             } else {
-                filteredTickets.forEach(ticket => {
+                tickets.forEach(ticket => {
                     const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50';
+                    row.className = 'hover:bg-gray-50 cursor-pointer';
+                    row.onclick = () => {
+                         // Simula a ação de ver detalhes de um item na lista
+                         alert(`Visualizando detalhes de ${ticket.id}`);
+                    };
                     row.innerHTML = `
                         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${ticket.id}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.requester}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.equipment}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${ticket.date}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${ticket.requester}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${ticket.equipment}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${new Date(ticket.date).toLocaleDateString('pt-BR')}</td>
                     `;
                     listBody.appendChild(row);
                 });
@@ -477,19 +505,40 @@
             toggleModal('status-list-modal', true);
         }
 
-        function closeStatusModal() {
-            toggleModal('status-list-modal', false);
-        }
+        function openActionModal(ticketId, status) {
+            const modalContent = document.getElementById('action-modal').querySelector('.modal-content');
 
-        // --- Funções Auxiliares (Mantidas) ---
+            // Lógica para determinar a cor do status
+            let statusColor = 'text-gray-500';
+            let statusBadge = 'bg-gray-100 text-gray-800';
+            switch (status) {
+                case 'ongoing':
+                    statusColor = 'text-blue-600';
+                    statusBadge = 'bg-blue-100 text-blue-800';
+                    break;
+                case 'completed':
+                    statusColor = 'text-green-600';
+                    statusBadge = 'bg-green-100 text-green-800';
+                    break;
+                case 'pending':
+                    statusColor = 'text-yellow-600';
+                    statusBadge = 'bg-yellow-100 text-yellow-800';
+                    break;
+            }
 
-        function showTicketActions(ticketId) {
-            document.getElementById('action-modal-title').textContent = `Ações para ${ticketId}`;
-            document.getElementById('action-modal-content').innerHTML = `
-                <div class="space-y-4">
+            modalContent.innerHTML = `
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold ${statusColor}">Chamado #${ticketId}</h3>
+                    <button onclick="closeActionModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                        <i data-feather="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="p-6 space-y-3">
+                    <p class="text-sm font-medium">Status: <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadge}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></p>
+
                     <button onclick="viewTicketDetails('${ticketId}')" class="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-150">
                         <span>Ver Detalhes</span>
-                        <i data-feather="eye" class="w-5 h-5"></i>
+                        <i data-feather="file-text" class="w-5 h-5"></i>
                     </button>
                     <button onclick="editTicket('${ticketId}')" class="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-150">
                         <span>Editar</span>
@@ -528,6 +577,13 @@
             closeNewTicketModal();
             e.target.reset();
         }
+
+        // ===================================================
+        // INICIALIZAÇÃO
+        // ===================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
     </script>
 </body>
 </html>

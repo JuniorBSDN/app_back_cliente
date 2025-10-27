@@ -21,7 +21,7 @@
         // ===================================================
         (function checkAuth() {
             // Adicionado suporte para diferentes chaves de login para compatibilidade
-            const user = sessionStorage.getItem('serviceflow_user') || localStorage.getItem('serviceflow_user') || localStorage.getItem('isLoggedIn');
+            const user = sessionStorage.getItem('back_informatica_user') || localStorage.getItem('back_informatica_user') || localStorage.getItem('isLoggedIn');
 
             if (!user) {
                 window.location.replace('index.html');
@@ -36,8 +36,8 @@
         // ===================================================
         function logout() {
             // Remove as sessões de login de ambas as áreas de armazenamento
-            sessionStorage.removeItem('serviceflow_user');
-            localStorage.removeItem('serviceflow_user');
+            sessionStorage.removeItem('back_informatica_user');
+            localStorage.removeItem('back_informatica_user');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('username');
             // Redireciona para a página de login
@@ -45,10 +45,10 @@
         }
 
         // ===================================================
-        // 2. WEB COMPONENT: ServiceflowNavbar (Padronizado)
+        // 2. WEB COMPONENT: BackInformaticaNavbar (Padronizado)
         // Implementação sem Shadow DOM (Igual ao dash.html)
         // ===================================================
-        class ServiceflowNavbar extends HTMLElement {
+        class BackInformaticaNavbar extends HTMLElement {
             connectedCallback() {
                 // Obtém o nome do arquivo da URL atual (Ex: tickets.html)
                 const currentPath = window.location.pathname.split('/').pop();
@@ -93,9 +93,9 @@
                 feather.replace();
             }
         }
-        customElements.define('serviceflow-navbar', ServiceflowNavbar);
+        customElements.define('back-informatica-navbar', BackInformaticaNavbar);
     </script>
-    <serviceflow-navbar></serviceflow-navbar>
+    <back-informatica-navbar></back-informatica-navbar>
 
     <main class="container mx-auto px-4 py-6 flex-grow">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
@@ -113,10 +113,9 @@
                         <i data-feather="chevron-down" class="w-4 h-4"></i>
                     </div>
                 </div>
-
                 <button onclick="window.location.href='newTicket.html'" class="w-1/2 md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition duration-150">
-    <i data-feather="plus" class="w-5 h-5 mr-2"></i> Novo Chamado
-</button>
+                    <i data-feather="plus" class="w-5 h-5 mr-2"></i> Novo Chamado
+                </button>
             </div>
         </div>
 
@@ -139,10 +138,9 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Equipamento</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Técnico</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipamento</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Data</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                         </tr>
                     </thead>
@@ -150,30 +148,138 @@
                         </tbody>
                 </table>
             </div>
-        </div>
 
+            <div class="px-6 py-4 flex justify-between items-center bg-gray-50">
+                <p class="text-sm text-gray-700">Mostrando <span id="start-range">1</span> a <span id="end-range">10</span> de <span id="total-count">50</span> chamados</p>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 text-sm font-medium border rounded-lg bg-white hover:bg-gray-100" disabled>Anterior</button>
+                    <button class="px-3 py-1 text-sm font-medium border rounded-lg bg-white hover:bg-gray-100">Próxima</button>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <div id="cost-details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center transition duration-300 opacity-0" onclick="toggleModal('cost-details-modal', false)">
-        <div class="modal-content bg-white p-6 rounded-lg shadow-2xl w-full max-w-lg transform scale-95 transition-all" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Detalhes do Relatório Técnico (RAT)</h3>
-                <button onclick="toggleModal('cost-details-modal', false)" class="text-gray-400 hover:text-gray-600 transition duration-150">
-                    <i data-feather="x" class="w-6 h-6"></i>
+    <div id="cost-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md modal-content transform scale-95">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-blue-600" id="cost-modal-title">Detalhes do RAT</h3>
+                <button onclick="toggleModal('cost-details-modal', false)" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                    <i data-feather="x" class="w-5 h-5"></i>
                 </button>
             </div>
-
-            <div id="cost-details-content" class="space-y-4">
+            <div class="p-6 space-y-3" id="cost-modal-content">
                 </div>
         </div>
     </div>
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            renderTicketsTable();
-            // feather.replace() é chamado dentro do componente ServiceflowNavbar no novo script
-        });
+        // ===================================================
+        // FUNÇÕES DE DADOS E EXIBIÇÃO
+        // ===================================================
+
+        function getAllTickets() {
+            // Dados simulados para a lista de chamados
+            const tickets = [
+                { id: 'TKT-001', requester: 'Maria Silva', equipment: 'Notebook HP', status: 'completed', date: '2025-09-01', technical_data: { hours: 2, parts: 50.00, extra_service: 0.00, total_value: 250.00 } },
+                { id: 'TKT-002', requester: 'João Santos', equipment: 'Impressora Epson', status: 'ongoing', date: '2025-09-02', technical_data: { hours: 1, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-003', requester: 'Ana Souza', equipment: 'Servidor Dell', status: 'pending', date: '2025-09-03', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-004', requester: 'Pedro Lima', equipment: 'Desktop Lenovo', status: 'completed', date: '2025-09-04', technical_data: { hours: 4, parts: 120.00, extra_service: 50.00, total_value: 470.00 } },
+                { id: 'TKT-005', requester: 'Carla Dias', equipment: 'Roteador Cisco', status: 'ongoing', date: '2025-09-05', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-006', requester: 'Bruno Costa', equipment: 'Monitor Samsung', status: 'completed', date: '2025-09-06', technical_data: { hours: 0.5, parts: 0.00, extra_service: 0.00, total_value: 50.00 } },
+                { id: 'TKT-007', requester: 'Daniela Reis', equipment: 'Teclado Multilaser', status: 'completed', date: '2025-09-07', technical_data: { hours: 1.5, parts: 0.00, extra_service: 0.00, total_value: 150.00 } },
+                { id: 'TKT-008', requester: 'Fernando Alves', equipment: 'Mouse Logitech', status: 'ongoing', date: '2025-09-08', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-009', requester: 'Gabriel Rocha', equipment: 'Webcam', status: 'completed', date: '2025-09-09', technical_data: { hours: 0.25, parts: 0.00, extra_service: 0.00, total_value: 25.00 } },
+                { id: 'TKT-010', requester: 'Helena Ferreira', equipment: 'Scanner', status: 'pending', date: '2025-09-10', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-011', requester: 'Igor Gomes', equipment: 'Switch TP-Link', status: 'ongoing', date: '2025-09-11', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-012', requester: 'Julia Martins', equipment: 'Notebook Dell', status: 'completed', date: '2025-09-12', technical_data: { hours: 3, parts: 0.00, extra_service: 100.00, total_value: 400.00 } },
+                { id: 'TKT-013', requester: 'Lucas Nunes', equipment: 'Impressora Brother', status: 'completed', date: '2025-09-13', technical_data: { hours: 1, parts: 0.00, extra_service: 0.00, total_value: 100.00 } },
+                { id: 'TKT-014', requester: 'Mariana Pires', equipment: 'Servidor HP', status: 'ongoing', date: '2025-09-14', technical_data: { hours: 0, parts: 0.00, extra_service: 0.00, total_value: 0.00 } },
+                { id: 'TKT-015', requester: 'Ricardo Campos', equipment: 'Desktop HP', status: 'completed', date: '2025-09-15', technical_data: { hours: 2, parts: 0.00, extra_service: 0.00, total_value: 200.00 } },
+            ];
+
+            return tickets.sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordena do mais novo para o mais antigo
+        }
+
+        function loadTickets(filter = 'all') {
+            const allTickets = getAllTickets();
+            const tableBody = document.getElementById('tickets-table');
+            tableBody.innerHTML = ''; // Limpa antes de preencher
+
+            const filteredTickets = filter === 'all'
+                ? allTickets
+                : allTickets.filter(t => t.status === filter);
+
+            document.getElementById('total-count').textContent = allTickets.length;
+
+            if (filteredTickets.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">Nenhum chamado encontrado com o filtro selecionado.</td></tr>`;
+            } else {
+                document.getElementById('start-range').textContent = 1;
+                document.getElementById('end-range').textContent = filteredTickets.length;
+            }
+
+
+            filteredTickets.forEach(ticket => {
+                let statusClass = '';
+                let statusText = '';
+                let costButton = '';
+
+                switch (ticket.status) {
+                    case 'ongoing':
+                        statusClass = 'bg-blue-100 text-blue-800';
+                        statusText = 'Em Andamento';
+                        costButton = `<button onclick="alert('Chamado em andamento, sem RAT fechado.')" class="text-gray-400 hover:text-gray-500 p-2 rounded-full transition duration-150" title="RAT ainda não fechado">
+                                        <i data-feather="dollar-sign" class="w-5 h-5"></i>
+                                      </button>`;
+                        break;
+                    case 'completed':
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = 'Concluído';
+                        costButton = `<button onclick="showCostDetails('${ticket.id}')" class="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition duration-150" title="Ver Detalhes do RAT">
+                                        <i data-feather="dollar-sign" class="w-5 h-5"></i>
+                                      </button>`;
+                        break;
+                    case 'pending':
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                        statusText = 'Pendente';
+                        costButton = `<button onclick="alert('Chamado pendente, sem RAT fechado.')" class="text-gray-400 hover:text-gray-500 p-2 rounded-full transition duration-150" title="RAT ainda não fechado">
+                                        <i data-feather="dollar-sign" class="w-5 h-5"></i>
+                                      </button>`;
+                        break;
+                    default:
+                        statusClass = 'bg-gray-100 text-gray-800';
+                        statusText = 'Não Definido';
+                }
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ticket.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.requester}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.equipment}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(ticket.date).toLocaleDateString('pt-BR')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium flex justify-center space-x-2">
+                        ${costButton}
+                        <button onclick="viewTicketDetails('${ticket.id}')" class="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition duration-150" title="Ver Detalhes">
+                            <i data-feather="file-text" class="w-5 h-5"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            feather.replace(); // Substitui ícones após carregar a tabela
+        }
+
+        // ===================================================
+        // FUNÇÕES DE AÇÃO E MODAL
+        // ===================================================
 
         function toggleModal(modalId, show) {
             const modal = document.getElementById(modalId);
@@ -181,11 +287,12 @@
 
             if (show) {
                 modal.classList.remove('hidden');
-                void modal.offsetWidth;
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-                feather.replace();
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    feather.replace(); // Garante ícones no modal
+                }, 10);
             } else {
                 content.classList.remove('scale-100');
                 content.classList.add('scale-95');
@@ -196,104 +303,52 @@
             }
         }
 
-        // ===================================================
-        // LÓGICA DO RAT E CÁLCULO DE CUSTO (Para Transparência)
-        // ===================================================
+        function viewTicketDetails(ticketId) {
+            alert(`Visualizando detalhes completos do Chamado #${ticketId} (Simulação)`);
+        }
 
-        /**
-         * Calcula o custo do chamado conforme a regra do Termo de Referência.
-         * R$ 100,00 para até 2 horas de serviço.
-         * R$ 20,00 por hora adicional.
-         */
-        function calculateCost(hours) {
-            const BASE_HOURS = 2.0;
-            const BASE_COST = 100.00;
-            const EXTRA_HOUR_COST = 20.00;
+        function getCostData(ticketId) {
+            const ticket = getAllTickets().find(t => t.id === ticketId);
+            return ticket ? ticket.technical_data : null;
+        }
 
-            let total_value = BASE_COST;
-            let extra_hours_calculated = 0;
+        function showCostDetails(ticketId) {
+            const costData = getCostData(ticketId);
+            const modalTitle = document.getElementById('cost-modal-title');
+            const modalContent = document.getElementById('cost-modal-content');
 
-            if (hours > BASE_HOURS) {
-                extra_hours_calculated = hours - BASE_HOURS;
-                total_value += extra_hours_calculated * EXTRA_HOUR_COST;
+            if (!costData) {
+                modalTitle.textContent = `RAT #${ticketId} - Não Encontrado`;
+                modalContent.innerHTML = `<p class="text-red-500">Detalhes de custo (RAT) não disponíveis para este chamado.</p>`;
+                toggleModal('cost-details-modal', true);
+                return;
             }
 
-            return {
-                total_value: total_value.toFixed(2).replace('.', ','),
-                extra_hours: extra_hours_calculated.toFixed(1).replace('.', ','),
-                base_cost: BASE_COST.toFixed(2).replace('.', ',')
-            };
-        }
+            const { hours, parts, extra_service, total_value } = costData;
+            const hoursRate = 100.00; // Taxa de serviço por hora simulada
+            const totalHoursCost = hours * hoursRate;
 
-        function renderTicketsTable() {
-            // Simulação de Chamados
-            const tickets = [
-                { id: 108, requester: 'Secretaria', equipment: 'Internet Lenta', technician: 'José Airton', status: 'Pendente', date: '2025-10-26', hours: 0 },
-                { id: 107, requester: 'Gabinete', equipment: 'Desktop do Secretário', technician: 'José Airton', status: 'Concluído', date: '2025-10-25', hours: 3.5 },
-                { id: 106, requester: 'Financeiro', equipment: 'Impressora Fiscal', technician: 'Sem Alocação', status: 'Em Andamento', date: '2025-10-25', hours: 0 },
-                { id: 105, requester: 'Administrativo', equipment: 'Servidor Principal', technician: 'José Airton', status: 'Concluído', date: '2025-10-24', hours: 2.0 },
-                { id: 104, requester: 'Almoxarifado', equipment: 'Cabo de Rede', technician: 'José Airton', status: 'Concluído', date: '2025-10-23', hours: 1.0 },
-            ];
+            modalTitle.textContent = `Detalhes do RAT para Chamado #${ticketId}`;
 
-            const tableBody = document.getElementById('tickets-table');
-            tableBody.innerHTML = tickets.map(ticket => {
-                let statusClass;
-                let actionButton;
-                let technicianName = ticket.technician;
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <p class="font-medium text-gray-700">Horas de Serviço:</p>
+                    <p class="text-right">${hours}h (${totalHoursCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})</p>
 
-                switch (ticket.status) {
-                    case 'Concluído':
-                        statusClass = 'text-green-600 font-medium';
-                        actionButton = `<button onclick="showCostDetails('${ticket.id}', ${ticket.hours})" class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-lg transition duration-150">Ver RAT</button>`;
-                        break;
-                    case 'Em Andamento':
-                        statusClass = 'text-yellow-600 font-medium';
-                        actionButton = `<button onclick="alert('Chamado em atendimento, aguarde o RAT.')" class="bg-gray-400 text-white text-xs px-3 py-1 rounded-lg cursor-not-allowed">Em Atendimento</button>`;
-                        break;
-                    case 'Pendente':
-                    default:
-                        statusClass = 'text-red-600 font-medium';
-                        actionButton = `<button onclick="alert('Chamado Pendente, aguarde a alocação do técnico.')" class="bg-gray-400 text-white text-xs px-3 py-1 rounded-lg cursor-not-allowed">Pendente</button>`;
-                        technicianName = 'Aguardando';
-                        break;
-                }
+                    <p class="font-medium text-gray-700">Peças/Materiais:</p>
+                    <p class="text-right">${parts.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
 
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${ticket.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ticket.requester}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">${ticket.equipment}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">${technicianName}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${ticket.status}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">${ticket.date}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">${actionButton}</td>
-                    </tr>
-                `;
-            }).join('');
-            feather.replace();
-        }
+                    <p class="font-medium text-gray-700">Serviços Extras (Ex: Viagem):</p>
+                    <p class="text-right">${extra_service.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
 
-        // Função para exibir os detalhes do RAT no modal
-        function showCostDetails(ticketId, hours) {
-            const costData = calculateCost(hours);
-            const content = document.getElementById('cost-details-content');
-
-            content.innerHTML = `
-                <div class="border-b pb-2 mb-3">
-                    <h4 class="text-lg font-semibold text-blue-700">Relatório Técnico Detalhado (RAT) - Chamado #${ticketId}</h4>
+                    <div class="col-span-2 border-t pt-3 flex justify-between font-bold text-lg">
+                        <p class="text-blue-700">TOTAL</p>
+                        <p class="text-blue-700">${total_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    </div>
                 </div>
 
-                <p class="text-gray-700">
-                    <span class="font-semibold">Horas Totais de Serviço:</span> ${hours} horas
-                </p>
-                <p class="text-gray-700">
-                    <span class="font-semibold">Custo Base (Até 2h):</span> R$ ${costData.base_cost}
-                </p>
-                <p class="text-gray-700 ${costData.extra_hours > 0 ? 'text-red-600' : 'text-green-600'}">
-                    <span class="font-semibold">Horas Adicionais:</span> ${costData.extra_hours} horas
-                </p>
-                <p class="text-2xl font-extrabold mt-4 p-3 bg-green-100 text-green-700 rounded-lg">
-                    CUSTO TOTAL DO CHAMADO (RAT): R$ ${costData.total_value}
+                <p class="mt-4 p-3 bg-green-100 text-green-700 rounded-lg">
+                    CUSTO TOTAL DO CHAMADO (RAT): R$ ${costData.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
 
                 <div class="mt-4 pt-4 border-t">
@@ -318,8 +373,14 @@
         // Evento de filtro
         document.getElementById('ticket-filter').addEventListener('change', function() {
             const filter = this.value;
-            alert(`Filtrando chamados por: ${filter} (Funcionalidade simulada)`);
-            // Em uma implementação real, você chamaria uma função para recarregar a tabela com os dados filtrados.
+            loadTickets(filter);
+        });
+
+        // ===================================================
+        // INICIALIZAÇÃO
+        // ===================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTickets();
         });
     </script>
 </body>
